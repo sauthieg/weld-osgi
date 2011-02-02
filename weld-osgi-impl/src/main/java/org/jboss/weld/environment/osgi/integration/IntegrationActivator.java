@@ -1,6 +1,7 @@
 package org.jboss.weld.environment.osgi.integration;
 
 import org.jboss.weld.bootstrap.api.SingletonProvider;
+import org.jboss.weld.environment.osgi.api.extension.ExtensionProvider;
 import org.osgi.framework.*;
 
 import javax.enterprise.event.Event;
@@ -18,12 +19,26 @@ import java.util.*;
 public class IntegrationActivator implements BundleActivator, BundleListener {
 
     private Map<Long, Holder> managed;
+    private ExtensionProviderListener listener;
+    private BundleContext bundleContext;
 
     @Override
     public void start(BundleContext context) throws Exception {
 
+        this.bundleContext = context;
+
         // Init the SingletonProvider
         SingletonProvider.initialize(new BundleSingletonProvider());
+
+        listener = new ExtensionProviderListener(context);
+        context.addServiceListener(listener, "(objectClass=" + ExtensionProvider.class.getName() + ")");
+        ServiceReference[] references = context.getServiceReferences(ExtensionProvider.class.getName(), null);
+        if (references != null) {
+            for (ServiceReference reference : references) {
+                ExtensionProvider provider = getExtensionProviderService(reference);
+                listener.addProvider(provider);
+            }
+        }
 
         managed = new HashMap<Long, Holder>();
 
@@ -34,6 +49,11 @@ public class IntegrationActivator implements BundleActivator, BundleListener {
         }
 
         context.addBundleListener(this);
+
+    }
+
+    private ExtensionProvider getExtensionProviderService(ServiceReference reference) {
+        return (ExtensionProvider) bundleContext.getService(reference);
     }
 
     @Override
@@ -85,7 +105,7 @@ public class IntegrationActivator implements BundleActivator, BundleListener {
         boolean set = BundleSingletonProvider.currentBundle.get() != null;
         BundleSingletonProvider.currentBundle.set(bundle.getBundleId());
         //System.out.println("Starting management for bundle " + bundle);
-        Weld weld = new Weld(bundle);
+        Weld weld = new Weld(bundle, listener.getProviders());
         weld.initialize();
 
         if (weld.isStarted()) {

@@ -12,16 +12,22 @@ import org.jboss.weld.environment.osgi.api.extension.Specification;
 import org.jboss.weld.environment.osgi.api.extension.events.AbstractServiceEvent;
 import org.jboss.weld.environment.osgi.api.extension.events.BundleContainerInitialized;
 import org.jboss.weld.environment.osgi.api.extension.events.BundleContainerShutdown;
+import org.osgi.framework.BundleContext;
 
 @ApplicationScoped
 public class AppStarter implements Starter {
 
     @Inject SpellCheckerGui gui;
 
+    @Inject
+    private BundleContext bundleContext;
+
     @PostConstruct
     @Override
     public void init() {
         gui.start();
+        System.out.println("BundleCOntext: " + bundleContext);
+
     }
 
     @PreDestroy

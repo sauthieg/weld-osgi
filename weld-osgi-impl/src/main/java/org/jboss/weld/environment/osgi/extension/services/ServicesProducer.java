@@ -23,7 +23,7 @@ public class ServicesProducer {
             throw new IllegalStateException("Can't find bundle.");
     }
 
-    @Produces
+    //@Produces
     public BundleContext getBundleContext(InjectionPoint p) {
         Bundle bundle = FrameworkUtil.getBundle(p.getMember().getDeclaringClass());
         if (bundle != null)

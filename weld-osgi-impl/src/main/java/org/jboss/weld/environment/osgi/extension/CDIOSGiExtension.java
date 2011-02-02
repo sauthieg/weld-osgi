@@ -43,6 +43,11 @@ public class CDIOSGiExtension implements Extension {
 
     private HashMap<Type, Set<InjectionPoint>> servicesToBeInjected
                             = new HashMap<Type, Set<InjectionPoint>>();
+    private BundleContext bundleContext;
+
+    public void setBundleContext(BundleContext bundleContext) {
+        this.bundleContext = bundleContext;
+    }
 
     public void registerWeldOSGiBeans(@Observes BeforeBeanDiscovery event, BeanManager manager) {
         event.addAnnotatedType(manager.createAnnotatedType(ServicesProducer.class));
@@ -55,8 +60,12 @@ public class CDIOSGiExtension implements Extension {
     // TODO : add injection for service registry, context, bundle, log service, entreprise stuff
 
     public void registerWeldOSGiContexts(@Observes
-                                         AfterBeanDiscovery event,
-                                         BeanManager manager) {
+                                         AfterBeanDiscovery event) {
+
+        // Add the bean responsible to declare the BundleContext that could be injected
+        event.addBean(new BundleContextBean(bundleContext));
+
+        // Create beans for each service injection point
         for (Iterator<Type> iterator = this.servicesToBeInjected.keySet().iterator();
                                                 iterator.hasNext();) {
             Type type =  iterator.next();

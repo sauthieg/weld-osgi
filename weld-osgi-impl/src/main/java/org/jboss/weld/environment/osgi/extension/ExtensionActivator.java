@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.util.AnnotationLiteral;
+
+import org.jboss.weld.environment.osgi.api.extension.ExtensionProvider;
 import org.jboss.weld.environment.osgi.api.extension.Specification;
 import org.jboss.weld.environment.osgi.api.extension.events.AbstractServiceEvent;
 import org.jboss.weld.environment.osgi.api.extension.events.ServiceArrival;
@@ -38,6 +40,8 @@ public class ExtensionActivator implements BundleActivator,
         this.context = context;
         context.addBundleListener(this);
         context.addServiceListener(this);
+
+        context.registerService(ExtensionProvider.class.getName(), new OSGiExtensionProvider(), null);
     }
 
     @Override

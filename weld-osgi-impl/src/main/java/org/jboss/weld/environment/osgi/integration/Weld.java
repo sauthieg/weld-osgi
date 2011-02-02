@@ -1,6 +1,7 @@
 package org.jboss.weld.environment.osgi.integration;
 
 import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,6 +12,7 @@ import org.jboss.weld.bootstrap.WeldBootstrap;
 
 import org.jboss.weld.bootstrap.api.Bootstrap;
 import org.jboss.weld.bootstrap.api.Environments;
+import org.jboss.weld.environment.osgi.api.extension.ExtensionProvider;
 import org.jboss.weld.environment.osgi.api.extension.events.BundleContainerInitialized;
 import org.jboss.weld.environment.osgi.api.extension.events.BundleContainerShutdown;
 import org.jboss.weld.environment.osgi.integration.discovery.bundle.BundleBeanDeploymentArchiveFactory;
@@ -28,10 +30,12 @@ public class Weld {
     private boolean hasShutdownBeenCalled = false;
     private BundleBeanDeploymentArchiveFactory factory;
     private WeldManager manager;
+    private List<ExtensionProvider> providers;
 
-    public Weld(Bundle bundle) {
+    public Weld(Bundle bundle, List<ExtensionProvider> providers) {
         this.bundle = bundle;
         factory = new BundleBeanDeploymentArchiveFactory();
+        this.providers = providers;
     }
 
     public boolean isStarted() {
@@ -72,7 +76,7 @@ public class Weld {
     }
 
     private BundleDeployment createDeployment(Bootstrap bootstrap) {
-        return new BundleDeployment(bundle, bootstrap, factory);
+        return new BundleDeployment(bundle, bootstrap, factory, providers);
     }
 
     public void shutdown() {

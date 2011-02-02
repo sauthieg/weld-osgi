@@ -16,29 +16,61 @@
  */
 package org.jboss.weld.environment.osgi.integration.discovery.bundle;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.jboss.weld.bootstrap.api.Bootstrap;
+import org.jboss.weld.bootstrap.api.ServiceRegistry;
+import org.jboss.weld.bootstrap.api.helpers.SimpleServiceRegistry;
 import org.jboss.weld.bootstrap.spi.BeanDeploymentArchive;
-import org.jboss.weld.environment.osgi.integration.discovery.AbstractWeldOSGiDeployment;
+import org.jboss.weld.bootstrap.spi.Deployment;
+import org.jboss.weld.bootstrap.spi.Metadata;
+import org.jboss.weld.environment.osgi.api.extension.ExtensionProvider;
 import org.jboss.weld.resources.spi.ResourceLoader;
 import org.osgi.framework.Bundle;
+
+import javax.enterprise.inject.spi.Extension;
 
 /**
  * Weld Deployment for OSGi environment.
  * 
  * @author Peter Royle
  */
-public class BundleDeployment extends AbstractWeldOSGiDeployment {
+public class BundleDeployment implements Deployment {
 
-    private final BeanDeploymentArchive beanDeploymentArchive;
+    private BeanDeploymentArchive beanDeploymentArchive;
+    private ServiceRegistry serviceRegistry;
+    private List<Metadata<Extension>> extensions;
 
-    public BundleDeployment(Bundle bundle, Bootstrap bootstrap, BundleBeanDeploymentArchiveFactory factory) {
-        super(bootstrap);
+    public BundleDeployment(Bundle bundle,
+                            Bootstrap bootstrap,
+                            BundleBeanDeploymentArchiveFactory factory,
+                            List<ExtensionProvider> providers) {
         this.beanDeploymentArchive = factory.scan(bundle, bootstrap);
         ResourceLoader loader = new BundleResourceLoader(bundle);
         this.beanDeploymentArchive.getServices().add(ResourceLoader.class, loader);
+        this.serviceRegistry = new SimpleServiceRegistry();
+
+        installExtensions(bundle, providers);
+    }
+
+    private void installExtensions(Bundle bundle, List<ExtensionProvider> providers) {
+        extensions = new ArrayList<Metadata<Extension>>();
+        for (ExtensionProvider provider : providers) {
+            final Extension extension = provider.newExtension(bundle.getBundleContext());
+            extensions.add(new Metadata<Extension>() {
+                @Override
+                public Extension getValue() {
+                    return extension;
+                }
+
+                @Override
+                public String getLocation() {
+                    return "";
+                }
+            });
+        }
     }
 
     @Override
@@ -54,4 +86,16 @@ public class BundleDeployment extends AbstractWeldOSGiDeployment {
     public BeanDeploymentArchive getBeanDeploymentArchive() {
         return beanDeploymentArchive;
     }
+
+    @Override
+    public ServiceRegistry getServices() {
+        return serviceRegistry;
+    }
+
+    @Override
+    public Iterable<Metadata<Extension>> getExtensions() {
+        return extensions;
+    }
+
+
 }
